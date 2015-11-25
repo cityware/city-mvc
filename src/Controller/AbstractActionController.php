@@ -32,11 +32,16 @@ abstract class AbstractActionController extends ZendAbstractActionController {
 
         $this->getViewModel();
 
-        $this->globalRoute = $this->getSessionAdapter('globalRoute');
-
-        $this->module = $this->sessionAdapter->moduleName;
-        $this->controller = $this->sessionAdapter->controllerName;
-        $this->action = $this->sessionAdapter->actionName;
+        $this->globalRoute = $_SESSION['globalRoute'];
+        
+        $this->module = $this->globalRoute->moduleName;
+        $this->controller = $this->globalRoute->controllerName;
+        $this->action = $this->globalRoute->actionName;
+        
+        $this->globalRoute->moduleView = MODULES_PATH . ucfirst($this->module) . DS . 'view' . DS . strtolower($this->module) . DS;
+        $this->globalRoute->moduleIni = MODULES_PATH . ucfirst($this->module) . DS . 'src' . DS . ucfirst($this->module) . DS . 'ini' . DS;
+        $this->globalRoute->moduleTranslate = MODULES_PATH . ucfirst($this->module) . DS . 'src' . DS . ucfirst($this->module) . DS . 'translate' . DS;
+        $this->globalRoute->moduleController = MODULES_PATH . ucfirst($this->module) . DS . 'src' . DS . ucfirst($this->module) . DS . 'Controller' . DS;
 
 
         //$this->image = $this->globalConfig['image'];
@@ -52,7 +57,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
         $this->assign('baseModule', $this->module);
         $this->assign('baseController', $this->controller);
         $this->assign('baseAction', $this->action);
-        $this->assign('langDefault', $this->sessionAdapter->language);
+        $this->assign('langDefault', $this->globalRoute->language);
 
         /* Tratamento das variáveis padrões de modulo, controlador e action */
         $eventManager = $this->getEventManager();
