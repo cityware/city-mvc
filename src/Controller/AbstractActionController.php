@@ -66,13 +66,26 @@ abstract class AbstractActionController extends ZendAbstractActionController {
         });
     }
 
+    public function getRsTableModel($tableName, $tableSchema) {
+        $connection = \Cityware\Db\Factory::factory();
+        $classTable = "\Orm\\{$tableSchema}\Tables\\{$tableName}Table";
+        return new $classTable($connection->getAdapter());
+    }
+    
+    public function newUid($idUsuario, $prefix = 'MKM') {
+        $sCod = str_pad($idUsuario, 6, '0', STR_PAD_LEFT);
+        $sMTime = str_replace(",", '', str_replace(".", '', microtime(true)));
+        $guidText = $prefix . '-' . $sCod . '-' . str_pad(substr($sMTime, 8, 6), 6, '0');
+        return $guidText;
+    }
+
     public function notFoundAction() {
         $this->layout('layout/error');
         parent::notFoundAction();
     }
 
     public function getImageGlobalConfig() {
-        return $this->image;
+        return $this->globalConfig['image'];
     }
 
     public function getGlobalConfig() {
