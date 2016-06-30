@@ -166,6 +166,19 @@ abstract class AbstractActionController extends ZendAbstractActionController {
 
         return $response;
     }
+    
+    /**
+     * Função para desabilitar a renderização do layout e da view retornando JSONP para utilização em AJAX
+     * @param array $variables
+     * @param string $jsonpCallback
+     * @return string
+     */
+    public function ajaxRenderJSONP(array $variables = array(), $jsonpCallback = 'callback') {
+        $jsonData = \Zend\Json\Json::encode($variables);
+        $response = $this->getResponse();
+        $response->setContent($_GET[$jsonpCallback].'('.$jsonData.');');
+        return $response;
+    }
 
     /**
      * Define as veriáveis que serão apresentadas no layout renderizado
