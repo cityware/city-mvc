@@ -151,18 +151,17 @@ abstract class AbstractActionController extends ZendAbstractActionController {
     public function noRender() {
         $response = $this->getResponse();
         $response->setContent(null);
-
         return $response;
     }
 
     /**
      * Função para desabilitar a renderização do layout e da view retornando JSON para utilização em AJAX
-     * @param array $valirables
+     * @param array $variables
      * @return type
      */
-    public function ajaxRender(array $valirables = array()) {
+    public function ajaxRender(array $variables = array()) {
         $response = $this->getResponse();
-        $response->setContent(\Zend\Json\Json::encode($valirables));
+        $response->setContent(\Zend\Json\Json::encode($variables));
 
         return $response;
     }
