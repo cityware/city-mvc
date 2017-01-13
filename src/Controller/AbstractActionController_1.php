@@ -21,10 +21,9 @@ use Cityware\View\Model\ViewModel;
  */
 abstract class AbstractActionController extends ZendAbstractActionController {
 
-    private $headCssLink = Array(), $headCssStyle = Array(), $headJsScript = Array(),
-            $headLink = Array(), $headJsLink = Array(), $metaName = Array(), $metaProperty = Array(),
-            $metaHttpEquiv = Array(), $processHead = Array();
-    private $viewModel = null, $sessionAdapter, $globalConfig;
+    private $headTitle = Array(), $headCssLink = Array(), $headCssStyle = Array(), $headJsScript = Array(),
+            $headLink = Array(), $headJsLink = Array(), $metaName = Array(), $metaProperty = Array(), $metaHttpEquiv = Array();
+    private $viewModel = null, $doctype, $contentType, $contentLang, $favicon, $sessionAdapter, $globalConfig, $image;
     public $globalRoute, $module, $controller, $action;
 
     public function __construct() {
@@ -60,6 +59,12 @@ abstract class AbstractActionController extends ZendAbstractActionController {
         $this->assign('baseController', $this->controller);
         $this->assign('baseAction', $this->action);
         $this->assign('langDefault', $this->globalRoute->language);
+
+        /* Tratamento das variáveis padrões de modulo, controlador e action */
+        $eventManager = $this->getEventManager();
+        $eventManager->attach(\Zend\Mvc\MvcEvent::EVENT_DISPATCH, function (\Zend\Mvc\MvcEvent $e) {
+            $this->onDispatch($e);
+        });
     }
 
     public function getRsTableModel($tableName, $tableSchema) {
@@ -117,7 +122,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
             $this->viewModel = $viewModel;
         }
         $this->viewModel->setOption('lfi_protection', true);
-        $_SESSION['processHead'] = $this->processHead;
+
         return $this->viewModel;
     }
 
@@ -314,7 +319,8 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return \Cityware\Controller\AbstractActionController
      */
     public function setHeadTitle($title, $type = 'SET', $separator = ' / ') {
-        $this->processHead['headTitle'] = Array('title' => $title, 'type' => $type, 'separator' => $separator);
+        $this->headTitle = Array('title' => $title, 'type' => $type, 'separator' => $separator);
+
         return $this;
     }
 
@@ -324,7 +330,8 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return \Cityware\Controller\AbstractActionController
      */
     public function setDoctype($doctype = \Zend\View\Helper\Doctype::XHTML5) {
-        $this->processHead['doctype'] = $doctype;
+        $this->doctype = $doctype;
+
         return $this;
     }
 
@@ -333,11 +340,11 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return string
      */
     public function getDoctype() {
-        if (empty($this->processHead['doctype'])) {
+        if (empty($this->doctype)) {
             $this->setDoctype();
         }
 
-        return $this->processHead['doctype'];
+        return $this->doctype;
     }
 
     /**
@@ -346,7 +353,8 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return \Cityware\Controller\AbstractActionController
      */
     public function setContentType($contentType = "utf-8") {
-        $this->processHead['contentType'] = $contentType;
+        $this->contentType = $contentType;
+
         return $this;
     }
 
@@ -356,7 +364,8 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return \Cityware\Controller\AbstractActionController
      */
     public function setContentLanguage($contentLang = "pt-br") {
-        $this->processHead['contentLang'] = $contentLang;
+        $this->contentLang = $contentLang;
+
         return $this;
     }
 
@@ -366,7 +375,8 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      * @return \Cityware\Controller\AbstractActionController
      */
     public function setFavicon($url) {
-        $this->processHead['favicon'] = $url;
+        $this->favicon = $url;
+
         return $this;
     }
 
@@ -399,6 +409,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setDescription($description) {
         $this->setMetaName('description', $description);
+
         return $this;
     }
 
@@ -410,7 +421,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setMetaName($keyValue, $content) {
         array_push($this->metaName, Array('key' => $keyValue, 'content' => $content));
-        $this->processHead['metaName'] = $this->metaName;
+
         return $this;
     }
 
@@ -422,7 +433,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setMetaProperty($keyValue, $content) {
         array_push($this->metaProperty, Array('key' => $keyValue, 'content' => $content));
-        $this->processHead['metaProperty'] = $this->metaProperty;
+
         return $this;
     }
 
@@ -434,7 +445,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setMetaHttpEquiv($keyValue, $content) {
         array_push($this->metaHttpEquiv, Array('key' => $keyValue, 'content' => $content));
-        $this->processHead['metaHttpEquiv'] = $this->metaHttpEquiv;
+
         return $this;
     }
 
@@ -447,7 +458,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setHeadCssLink($url, $media = 'all', array $conditionalStylesheet = array()) {
         array_push($this->headCssLink, Array('url' => $url, 'media' => $media, 'conditional' => $conditionalStylesheet, 'typeFile' => 'css'));
-        $this->processHead['headCssLink'] = $this->headCssLink;
+
         return $this;
     }
 
@@ -459,7 +470,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setHeadCssStyle($css, array $conditional = array()) {
         array_push($this->headCssStyle, Array('css' => $css, 'conditional' => $conditional));
-        $this->processHead['headCssStyle'] = $this->headCssStyle;
+
         return $this;
     }
 
@@ -472,7 +483,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setHeadJsScript($script, array $conditional = array()) {
         array_push($this->headJsScript, Array('script' => $script, 'type' => 'text/javascript', 'conditional' => $conditional));
-        $this->processHead['headJsScript'] = $this->headJsScript;
+
         return $this;
     }
 
@@ -485,7 +496,7 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setHeadJsLink($url, array $attrs = array()) {
         array_push($this->headJsLink, Array('url' => $url, 'type' => 'text/javascript', 'attrs' => $attrs));
-        $this->processHead['headJsLink'] = $this->headJsLink;
+
         return $this;
     }
 
@@ -498,7 +509,169 @@ abstract class AbstractActionController extends ZendAbstractActionController {
      */
     public function setHeadLink($url, $rel, $type = null, $media = null, $sizes = null) {
         array_push($this->headLink, Array('href' => $url, 'rel' => $rel, 'type' => $type, 'media' => $media, 'sizes' => $sizes));
-        $this->processHead['headLink'] = $this->headLink;
+
         return $this;
     }
+
+    /**
+     * Função de processamento no dispatch da action
+     * @param  \Zend\Mvc\MvcEvent $e
+     * @return object
+     */
+    public function onDispatch(\Zend\Mvc\MvcEvent $e) {
+        $this->processHelpers($e);
+        return parent::onDispatch($e);
+    }
+
+    /**
+     * Função de processamento dos Helpers setados no controller
+     * @param \Zend\Mvc\MvcEvent $e
+     */
+    public function processHelpers($e) {
+        $viewHelperManager = $e->getApplication()->getServiceManager()->get('ViewHelperManager');
+
+        /**
+         * Definbe um novo ou adiciona outro Titulo da página
+         */
+        if (!empty($this->headTitle)) {
+            $headTitle = $viewHelperManager->get('headTitle');
+            $headTitle($this->headTitle['title'], $this->headTitle['type'])->setSeparator($this->headTitle['separator'])->setAutoEscape(false);
+        }
+
+        /**
+         * Define o Doctype da página
+         */
+        if (!empty($this->doctype)) {
+            $doctype = $viewHelperManager->get('doctype');
+            $doctype($this->doctype);
+        }
+
+        /**
+         * Define o Content Type da página
+         */
+        if (!empty($this->contentType)) {
+            $contentType = $viewHelperManager->get('headMeta');
+            if (($this->getDoctype() == \Zend\View\Helper\Doctype::XHTML5) or ( $this->getDoctype() == \Zend\View\Helper\Doctype::HTML5)) {
+                $contentType()->setCharset($this->contentType)->setSeparator(PHP_EOL);
+            } else {
+                $contentType()->appendHttpEquiv('Content-Type', 'text/html; charset=' . $this->contentType)->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define o Content Lang da página
+         */
+        if (!empty($this->contentLang)) {
+            $contentLang = $viewHelperManager->get('headMeta');
+            $contentLang()->appendHttpEquiv('Content-Language', $this->contentLang)->setSeparator(PHP_EOL);
+        }
+
+        /**
+         * Define Link de Estilo CSS ou Less da página
+         */
+        if (!empty($this->headCssLink)) {
+            $headCssLink = $viewHelperManager->get('headLink');
+            foreach ($this->headCssLink as $key => $value) {
+                if ($value['typeFile'] == 'css') {
+                    $headCssLink()->appendStylesheet($value['url'], $value['media'], $value['conditional'])->setSeparator(PHP_EOL);
+                } else if ($value['typeFile'] == 'less') {
+                    $headCssLink()->appendStylesheet(URL_DEFAULT . 'less.php?' . $value['url'], $value['media'], $value['conditional'])->setSeparator(PHP_EOL);
+                }
+            }
+        }
+
+        /**
+         * Define Link de Scripts JS na página
+         */
+        if (!empty($this->headJsLink)) {
+            $headJsLink = $viewHelperManager->get('headScript');
+            foreach ($this->headJsLink as $key => $value) {
+                $headJsLink()->appendFile($value['url'], $value['type'], $value['attrs'])->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Link de cabeçalho da página
+         */
+        if (!empty($this->headLink)) {
+            $headLink = $viewHelperManager->get('headLink');
+            foreach ($this->headLink as $valueHeadLink) {
+                $headLink($valueHeadLink, 'PREPEND')->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Estilo CSS na página
+         */
+        if (!empty($this->headCssStyle)) {
+            $headCssLink = $viewHelperManager->get('headStyle');
+            foreach ($this->headCssStyle as $key => $value) {
+                $headCssLink()->appendStyle($value['css'], $value['conditional'])->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Scripts JS na página
+         */
+        if (!empty($this->headJsScript)) {
+            $headJsScript = $viewHelperManager->get('headScript');
+            foreach ($this->headJsScript as $key => $value) {
+                $headJsScript()->appendScript($value['script'], $value['type'], $value['conditional'])->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define o Favicon da página
+         */
+        if (!empty($this->favicon)) {
+            $favicon = $viewHelperManager->get('headLink');
+            if (($this->getDoctype() == \Zend\View\Helper\Doctype::XHTML5) or ( $this->getDoctype() == \Zend\View\Helper\Doctype::HTML5)) {
+                $favicon(array('rel' => 'shortcut icon', 'href' => $this->favicon), 'PREPEND')->setSeparator(PHP_EOL);
+            } else {
+                $favicon(array('rel' => 'favicon', 'href' => $this->favicon), 'PREPEND')->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Meta Tags do tipo Name
+         */
+        if (!empty($this->metaName)) {
+            $metaName = $viewHelperManager->get('headMeta');
+            foreach ($this->metaName as $key => $value) {
+                $metaName()->appendName($value['key'], $value['content'])->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Meta Tags do tipo Property
+         */
+        if (!empty($this->metaProperty)) {
+            /**
+             *
+              $isFacebook = new \Cityware\View\Helper\IsFacebook();
+              if ($isFacebook) {
+              $this->getRenderer()->setDoctype(\Zend\View\Helper\Doctype::XHTML1_RDFA11);
+              $this->getRenderer()->appendProperty($keyValue, $content)->setSeparator(PHP_EOL);
+              }
+             */
+            $metaProperty = $viewHelperManager->get('headMeta');
+            $doctype = $viewHelperManager->get('doctype');
+            $doctype(\Zend\View\Helper\Doctype::XHTML1_RDFA11);
+
+            foreach ($this->metaProperty as $key => $value) {
+                $metaProperty()->appendProperty($value['key'], $value['content'])->setSeparator(PHP_EOL);
+            }
+        }
+
+        /**
+         * Define Meta Tags do tipo HttpEquiv
+         */
+        if (!empty($this->metaHttpEquiv)) {
+            $metaName = $viewHelperManager->get('headMeta');
+            foreach ($this->metaHttpEquiv as $key => $value) {
+                $metaName()->appendHttpEquiv($value['key'], $value['content'])->setSeparator(PHP_EOL);
+            }
+        }
+    }
+
 }
