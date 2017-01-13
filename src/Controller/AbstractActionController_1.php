@@ -19,7 +19,7 @@ use Cityware\View\Model\ViewModel;
  *
  * @author fabricio.xavier
  */
-abstract class AbstractActionController extends ZendAbstractActionController {
+abstract class AbstractActionController_1 extends ZendAbstractActionController {
 
     private $headTitle = Array(), $headCssLink = Array(), $headCssStyle = Array(), $headJsScript = Array(),
             $headLink = Array(), $headJsLink = Array(), $metaName = Array(), $metaProperty = Array(), $metaHttpEquiv = Array();
